@@ -4,6 +4,7 @@ package com.example.razon30.projectmap;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -60,14 +61,14 @@ public class NavigationDrawerFragment extends Fragment {
 
 
         Pattern emailPattern = Patterns.EMAIL_ADDRESS; // API level 8+
+        String fullName;
         Account[] accounts = AccountManager.get(getActivity()).getAccounts();
         for (Account account : accounts) {
             if (emailPattern.matcher(account.name).matches()) {
 
 
-                String fullName = account.name;
+                fullName = account.name;
                 possibleEmail = fullName.substring(0, fullName.lastIndexOf("@"));
-                ;
 
 
             }
@@ -110,6 +111,14 @@ public class NavigationDrawerFragment extends Fragment {
                 Toast.makeText(getActivity(), "Touched on: " + position, Toast.LENGTH_LONG).show();
                 //  mdrawer_layout.closeDrawer(GravityCompat.START);
 //                ((MainActivity) getActivity()).onDrawerItemClicked(position - 1);
+
+                String place = listPlaces.get(position);
+
+                Intent intent = new Intent(getActivity(),Collecting_Data_And_Show_Marker.class);
+                intent.putExtra("place",place);
+                startActivity(intent);
+
+
             }
 
             @Override

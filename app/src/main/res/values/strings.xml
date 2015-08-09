@@ -8,4 +8,9 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="open">open</string>
     <string name="close">close</string>
+    <string name="title_activity_simple_direction">SimpleDirection</string>
+    <string name="title_activity_final__test">FInal_Test</string>
+    <string name="title_activity_collecting__data__and__show__marker">
+        Collecting_Data_And_Show_Marker
+    </string>
 </resources>
