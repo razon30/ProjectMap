@@ -6,14 +6,25 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -25,9 +36,14 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -57,6 +73,18 @@ public class FInal_Test extends AppCompatActivity implements
 
     ArrayList<LatLng> listLatLng = new ArrayList<LatLng>();
 
+    //for search
+    //Tag used to cancel the request
+    public static String tag_json_obj = "json_obj_req";
+    AutoCompleteTextView autoCompleteTextView;
+    public final String dropDownURL = "https://maps.googleapis.com/maps/api/place/autocomplete/json?key=AIzaSyAwJMcBAzDt2ij8YKUKLgtZJKIZVOJpbAA";
+    public final String searchURL = "https://maps.googleapis.com/maps/api/geocode/json?address=";
+    ArrayList<String> searchList = new ArrayList<String>();
+    ImageView searchImage;
+    private VolleySingleton volleySingleton;
+    // private ImageLoader imageLoader;
+    private RequestQueue requestQueue;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +95,66 @@ public class FInal_Test extends AppCompatActivity implements
         fragment = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id
                 .map_final));
         map = fragment.getMap();
+        volleySingleton = VolleySingleton.getsInstance();
+        requestQueue = volleySingleton.getmRequestQueue();
 
+        searchImage = (ImageView) findViewById(R.id.searchButton);
+        searchImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (autoCompleteTextView.getText().toString() != "") {
+                    //spaces are replaced by + for url
+                    char a[] = autoCompleteTextView.getText().toString().toCharArray();
+                    int i = 0;
+                    for (char c : a) {
+                        if (c == ' ')
+                            a[i] = '+';
+                        i++;
+                    }
+                    searchRequest(new String(a));
+                }
+            }
+        });
+
+        autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
+        autoCompleteTextView.setThreshold(1);
+        autoCompleteTextView.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                autoComplete(s.toString());
+                ArrayAdapter adapter = new ArrayAdapter(getBaseContext(), android.R.layout.simple_list_item_1, searchList);
+                autoCompleteTextView.setAdapter(adapter);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+        });
+
+        autoCompleteTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (autoCompleteTextView.getText().toString() != "") {
+                    //spaces are replaced by + for url
+                    char a[] = autoCompleteTextView.getText().toString().toCharArray();
+                    int i = 0;
+                    for (char c : a) {
+                        if (c == ' ')
+                            a[i] = '+';
+                        i++;
+                    }
+                    searchRequest(new String(a));
+                }
+            }
+        });
+
+        //worksOnSearch();
 
         //show error dialog if GoolglePlayServices not available
         if (!isGooglePlayServicesAvailable()) {
@@ -83,6 +170,7 @@ public class FInal_Test extends AppCompatActivity implements
 
 
     }
+
 
     @Override
     public void onStart() {
@@ -112,8 +200,8 @@ public class FInal_Test extends AppCompatActivity implements
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(INTERVAL);
-        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
+//        mLocationRequest.setInterval(INTERVAL);
+//        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
@@ -236,6 +324,92 @@ public class FInal_Test extends AppCompatActivity implements
             Log.d(TAG, "Location update resumed .....................");
         }
     }
+
+    public void autoComplete(String input) {
+        String tempURL = dropDownURL;
+        tempURL = tempURL + "&input=" + input;
+
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET,
+                tempURL, null,
+                new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONArray prediction = response.getJSONArray("predictions");
+                            for (int i = 0; i < prediction.length(); i++) {
+                                JSONObject place = prediction.getJSONObject(i);
+                                String name = place.getString("description");
+                                searchList.add(new String(name));
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+            }
+        });
+        requestQueue.add(jsonObjReq);
+
+        // Adding request to request queue
+
+    }
+
+    public void searchRequest(String address) {
+        String tempURL = searchURL + address;
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET,
+                tempURL, null,
+                new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONArray result = response.getJSONArray("results");
+                            JSONObject place = result.getJSONObject(0);
+                            JSONObject geometry = place.getJSONObject("geometry");
+                            JSONObject location = geometry.getJSONObject("location");
+                            Double lat = location.getDouble("lat");
+                            Double lng = location.getDouble("lng");
+                            Location loc = new Location("");
+                            loc.setLatitude(lat);
+                            loc.setLongitude(lng);
+                            setMarkerOnLocation(loc);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                error.printStackTrace();
+            }
+        });
+
+        requestQueue.add(jsonObjReq);
+
+//        AppController appController = AppController.getInstance();
+//
+//        // Adding request to request queue
+//        appController.addToRequestQueue(jsonObjReq, tag_json_obj);
+    }
+
+    private  void setMarkerOnLocation(Location location){
+        LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
+        final CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(myCoordinates)      // Sets the center of the map to Mountain View
+                .zoom(17)                   // Sets the zoom
+                .bearing(90)                // Sets the orientation of the camera to east
+                .tilt(30)                   // Sets the tilt of the camera to 30 degrees
+                .build();                   //
+        map.addMarker(new MarkerOptions().position(myCoordinates).title("Marker"));
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
 
 
     @Override

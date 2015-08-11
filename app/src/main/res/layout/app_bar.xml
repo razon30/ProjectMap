@@ -1,11 +1,31 @@
 <android.support.v7.widget.Toolbar
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="80dp"
     android:background="@color/colorPrimary"
     android:paddingTop="@dimen/app_bar_top_padding"
+    android:paddingBottom="8dp"
     app:theme="@style/Base.ThemeOverlay.AppCompat.Dark.ActionBar"
     app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/abc_ic_search_api_mtrl_alpha"
+        android:padding="@dimen/abc_action_bar_default_padding_material"
+        android:layout_marginLeft="30dp"
+        android:id="@+id/searchButton"/>
+
+    <AutoCompleteTextView
+        android:id="@+id/autoCompleteTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="14"
+        android:hint="Search A Place"
+        android:padding="@dimen/abc_action_bar_default_padding_material"
+        android:singleLine="true">
+    </AutoCompleteTextView>
+
 
 </android.support.v7.widget.Toolbar>
